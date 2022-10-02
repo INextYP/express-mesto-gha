@@ -45,7 +45,7 @@ app.use('*', (req, res) => {
 });
 
 mongoose.connect('mongodb://127.0.0.1:27017/mestodb', {
-  useNewUrlParser: true, useCreateIndex: true, useFindAndModify: false, useUnifiedTopology: true,
+  useNewUrlParser: true,
 });
 
 app.use((err, req, res, next) => {
@@ -54,7 +54,6 @@ app.use((err, req, res, next) => {
   } else {
     res.status(500).json({ message: 'ошибка сервера' });
   }
-
   next();
 });
 
