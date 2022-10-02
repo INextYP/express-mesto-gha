@@ -1,4 +1,4 @@
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/user');
 const BadRequestError = require('../errors/BadRequestError');
@@ -9,7 +9,7 @@ const login = (req, res, next) => {
   const { email, password } = req.body;
   User.findUserByCredentials(email, password)
     .then((user) => {
-      const token = jwt.sign({ _id: user._id }, 'jwt-secret-key', { expiresIn: '7d' });
+      const token = jwt.sign({ _id: user._id }, 'secret-key', { expiresIn: '7d' });
       res.cookie('jwt', token, {
         maxAge: 3600000 * 24 * 7,
         httpOnly: true,
@@ -72,12 +72,12 @@ const createUser = (req, res, next) => {
       });
     })
     .catch((error) => {
-      if (error.code === 11000) {
-        next(new ConflictError('Пользователь с таким email уже зарегистрирован'));
-        return;
-      }
       if (error.name === 'ValidationError') {
         next(new BadRequestError('Неверные данные'));
+        return;
+      }
+      if (error.code === 11000) {
+        next(new ConflictError('Пользователь с таким email уже зарегистрирован'));
         return;
       }
       next(error);

@@ -13,11 +13,13 @@ const { patternLink } = require('./utils/constants');
 
 const app = express();
 
+app.use(cookieParser());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
-app.use(errors());
-app.use(cookieParser());
-app.use(auth);
+
+mongoose.connect('mongodb://127.0.0.1:27017/mestodb', {
+  useNewUrlParser: true,
+});
 
 app.post('/signin', celebrate({
   body: Joi.object().keys({
@@ -31,13 +33,15 @@ app.post('/signin', celebrate({
 
 app.post('/signup', celebrate({
   body: Joi.object().keys({
-    name: Joi.string().min(2).max(30).default('Жак-Ив Кусто'),
-    about: Joi.string().min(2).max(30).default('Исследователь'),
+    name: Joi.string().min(2).max(30),
+    about: Joi.string().min(2).max(30),
     avatar: Joi.string().uri().regex(patternLink),
     email: Joi.string().required().email(),
     password: Joi.string().required(),
   }),
 }), createUser);
+
+app.use(auth);
 
 app.use('/users', routerUsers);
 app.use('/cards', routerCards);
@@ -45,9 +49,7 @@ app.use('*', (req, res) => {
   res.status(404).send({ message: 'Страница не найдена' });
 });
 
-mongoose.connect('mongodb://127.0.0.1:27017/mestodb', {
-  useNewUrlParser: true, useCreateIndex: true, useFindAndModify: false, useUnifiedTopology: true,
-});
+app.use(errors());
 
 app.use((err, req, res, next) => {
   if (err.statusCode) {
