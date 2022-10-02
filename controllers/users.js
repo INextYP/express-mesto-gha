@@ -1,92 +1,112 @@
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
 const User = require('../models/user');
+const BadRequestError = require('../errors/BadRequestError');
+const NotFoundError = require('../errors/NotFoundError');
+const ConflictError = require('../errors/ConflictError');
 
-const ERROR_400 = 400;
-const ERROR_404 = 404;
-const ERROR_500 = 500;
+const login = (req, res, next) => {
+  const { email, password } = req.body;
+  User.findUserByCredentials(email, password)
+    .then((user) => {
+      const token = jwt.sign({ _id: user._id }, 'jwt-secret-key', { expiresIn: '7d' });
+      res.cookie('jwt', token, {
+        maxAge: 3600000 * 24 * 7,
+        httpOnly: true,
+      });
+      res.send({ token });
+    })
+    .catch(next);
+};
 
-const getUsers = (req, res) => {
+const getUsers = (req, res, next) => {
   User.find({})
     .then((users) => {
       res.send({ data: users });
     })
-    .catch((error) => res.status(ERROR_500).send({ message: error.message }));
+    .catch(next);
 };
 
-const getUserById = (req, res) => {
+const getUserById = (req, res, next) => {
   User.findById(req.params.userId)
     .then((user) => {
       if (!user) {
-        res.status(ERROR_404).send({ message: 'Пользователь не найден' });
-        return;
+        throw new NotFoundError('Пользователь не найден');
       }
       res.send({ data: user });
     })
     .catch((error) => {
       if (error.name === 'CastError') {
-        res.status(ERROR_400).send({ message: 'Переданы неверные данные' });
+        next(new BadRequestError('Неправильные данные'));
         return;
       }
-      res.status(ERROR_500).send({ message: error.message });
+      next(error);
     });
 };
 
-const createUser = (req, res) => {
-  const { name, about, avatar } = req.body;
-  User.create({ name, about, avatar })
-    .then((user) => {
-      res.send(user);
-    })
-    .catch((error) => {
-      if (error.name === 'ValidationError') {
-        res.status(ERROR_400).send({ message: 'Переданы неверные данные' });
+const createUser = (req, res, next) => {
+  const {
+    name, about, avatar, email, password,
+  } = req.body;
+
+  bcrypt.hash(password, 10)
+    .then((hash) => User.create({
+      name, about, avatar, email, password: hash,
+    }))
+    .then((user) => res.status(201).send({
+      name, about, avatar, email, _id: user._id,
+    }))
+    .catch((err) => {
+      if (err.code === 11000) {
+        next(new ConflictError('Пользователь с таким email уже зарегистрирован'));
         return;
       }
-      res.status(ERROR_500).send({ message: error.message });
+      if (err.name === 'ValidationError') {
+        next(new BadRequestError('Неверные данные'));
+        return;
+      }
+      next(err);
     });
 };
 
-const updateUser = (req, res) => {
+const updateUser = (req, res, next) => {
   const { name, about } = req.body;
   User.findByIdAndUpdate(req.user._id, { name, about }, { new: true, runValidators: true })
     .then((user) => {
       if (!user) {
-        res.status(ERROR_404).send({ message: 'Пользователь не найден' });
+        next(new NotFoundError('Ошибка'));
         return;
       }
       res.send({ data: user });
     })
-    .catch((error) => {
-      if (error.name === 'ValidationError') {
-        res.status(ERROR_400).send({ message: 'Переданы неверные данные' });
+    .catch((err) => {
+      if (err.name === 'ValidationError') {
+        next(new BadRequestError('Неверные данные'));
         return;
       }
-      if (error.name === 'CastError') {
-        res.status(ERROR_404).send({ message: 'Пользователь не найден' });
-        return;
-      }
-      res.status(ERROR_500).send({ message: error.message });
+      next(err);
     });
 };
 
-const updateAvatar = (req, res) => {
+const updateAvatar = (req, res, next) => {
   const { avatar } = req.body;
   User.findByIdAndUpdate(req.user._id, { avatar }, { new: true, runValidators: true })
     .then((user) => {
       if (!user) {
-        res.status(ERROR_404).send({ message: 'Пользователь не найден' });
+        next(new NotFoundError('Пользователь не найден'));
         return;
       }
       res.send({ data: user });
     })
     .catch((error) => {
       if (error.name === 'ValidationError') {
-        res.status(ERROR_400).send({ message: 'Переданы неверные данные' });
+        next(new BadRequestError('Неверные данные'));
         return;
       }
-      res.status(ERROR_500).send({ message: error.message });
+      next(error);
     });
 };
 
 module.exports = {
-  createUser, getUsers, getUserById, updateUser, updateAvatar,
+  createUser, getUsers, getUserById, updateUser, updateAvatar, login,
 };
