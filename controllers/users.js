@@ -16,7 +16,7 @@ module.exports.login = (req, res, next) => {
         httpOnly: true,
         sameSite: true,
       });
-      res.status(201).send({ message: 'Авторизация успешна', token });
+      res.status(200).send({ message: 'Авторизация успешна', token });
     })
     .catch((err) => {
       if (err.message === 'IncorrectEmail') {
