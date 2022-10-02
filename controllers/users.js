@@ -8,26 +8,22 @@ const AuthError = require('../errors/AuthError');
 
 module.exports.login = (req, res, next) => {
   const { email, password } = req.body;
-
   return User.findUserByCredentials(email, password)
     .then((user) => {
       const token = jwt.sign({ _id: user._id }, 'some-secret-key', { expiresIn: '7d' });
-      res
-        .cookie('jwt', token, {
-          maxAge: 3600000 * 24 * 7,
-          httpOnly: true,
-        })
-        .send({
-          _id: user._id,
-          name: user.name,
-          about: user.about,
-          avatar: user.avatar,
-          email: user.email,
-          token,
-        })
-        .end();
+      res.cookie('jwt', token, {
+        maxAge: 3600000 * 24 * 7,
+        httpOnly: true,
+        sameSite: true,
+      });
+      res.status(201).send({ message: 'Авторизация успешна', token });
     })
-    .catch(next);
+    .catch((err) => {
+      if (err.message === 'IncorrectEmail') {
+        next(new AuthError('Не правильный логин или пароль'));
+      }
+      next(err);
+    });
 };
 
 module.exports.getUsers = (req, res, next) => {
