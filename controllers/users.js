@@ -100,17 +100,18 @@ module.exports.createUser = (req, res, next) => {
 module.exports.updateUser = (req, res, next) => {
   const { name, about } = req.body;
   User.findByIdAndUpdate(req.user._id, { name, about }, { new: true, runValidators: true })
+    .orFail(() => {
+      throw new BadRequestError('Переданы некорректные данные');
+    })
     .then((user) => {
-      res.send({ data: user });
+      if (!user) {
+        next(new BadRequestError('Переданы некорректные данные'));
+      }
+      res.status(200).send({ data: user });
     })
     .catch((err) => {
       if (err.name === 'ValidationError') {
-        next(new BadRequestError('Неверные данные'));
-        return;
-      }
-      if (err.name === 'CastError') {
-        next(new NotFoundError('Пользователь не найден'));
-        return;
+        next(new BadRequestError('Переданы некорректные данные'));
       }
       next(err);
     });
