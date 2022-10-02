@@ -38,9 +38,12 @@ app.use('*', (req, res) => {
 app.use(errors());
 
 app.use((err, req, res, next) => {
-  const status = err.statusCode || 500;
+  if (err.statusCode) {
+    res.status(err.statusCode).json({ message: err.message });
+  } else {
+    res.status(500).json({ message: 'Ошибка' });
+  }
 
-  res.status(status).send({ err });
   next();
 });
 

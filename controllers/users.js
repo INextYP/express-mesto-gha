@@ -28,10 +28,8 @@ module.exports.login = (req, res, next) => {
 
 module.exports.getUsers = (req, res, next) => {
   User.find({})
-    .then((users) => {
-      res.send({ data: users });
-    })
-    .catch(next);
+    .then((user) => res.status(200).send(user))
+    .catch((err) => next(err));
 };
 
 module.exports.getUserById = (req, res, next) => {
