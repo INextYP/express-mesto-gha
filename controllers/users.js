@@ -20,7 +20,7 @@ module.exports.login = (req, res, next) => {
     })
     .catch((err) => {
       if (err.message === 'IncorrectEmail') {
-        next(new AuthError('Не правильный логин или пароль'));
+        next(new AuthError('Неверный email или пароль.'));
       }
       next(err);
     });
@@ -86,14 +86,12 @@ module.exports.createUser = (req, res, next) => {
     })
     .catch((err) => {
       if (err.name === 'ValidationError') {
-        next(new BadRequestError());
-        return;
+        next(new BadRequestError('Переданы некорректные данные.'));
+      } else if (err.code === 11000) {
+        next(new ConflictError('Ошибка'));
+      } else {
+        next(err);
       }
-      if (err.code === 11000) {
-        next(new ConflictError());
-        return;
-      }
-      next(err);
     });
 };
 
@@ -101,11 +99,11 @@ module.exports.updateUser = (req, res, next) => {
   const { name, about } = req.body;
   User.findByIdAndUpdate(req.user._id, { name, about }, { new: true, runValidators: true })
     .orFail(() => {
-      throw new BadRequestError('Переданы некорректные данные');
+      throw new BadRequestError('Переданы неверные данные');
     })
     .then((user) => {
       if (!user) {
-        next(new BadRequestError('Переданы некорректные данные'));
+        next(new BadRequestError('Переданы неверные данные'));
       }
       res.status(200).send({ data: user });
     })

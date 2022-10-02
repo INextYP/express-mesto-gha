@@ -12,6 +12,7 @@ const {
   registrationValidation,
   loginValidation,
 } = require('./middlewares/validation');
+const NotFoundError = require('./errors/NotFoundError');
 
 const app = express();
 
@@ -31,8 +32,8 @@ app.use(auth);
 
 app.use('/users', routerUsers);
 app.use('/cards', routerCards);
-app.use('*', (req, res) => {
-  res.status(404).send({ message: 'Страница не найдена' });
+app.use('*', (req, res, next) => {
+  next(new NotFoundError('Страница не найдена'));
 });
 
 app.use(errors());
