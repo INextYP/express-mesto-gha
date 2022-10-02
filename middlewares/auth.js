@@ -3,20 +3,12 @@ const AuthError = require('../errors/AuthError');
 
 module.exports = (req, res, next) => {
   let payload;
-  const { authorization } = req.headers;
-
-  if (!authorization || !authorization.startsWith('Bearer ')) {
-    throw new AuthError('Пользователь не авторизован');
-  }
-
-  const token = authorization.replace('Bearer ', '');
-
+  const token = req.cookies.jwt;
   try {
-    payload = jwt.verify(token, 'some-secret-key');
+    payload = jwt.verify(token, 'jwt-secret-token');
   } catch (err) {
-    throw new AuthError('Пользователь не авторизован');
+    next(new AuthError('Пользователь не авторизован'));
   }
-
   req.user = payload;
   return next();
 };

@@ -32,7 +32,7 @@ app.post('/signup', celebrate({
   body: Joi.object().keys({
     name: Joi.string().min(2).max(30).default('Жак-Ив Кусто'),
     about: Joi.string().min(2).max(30).default('Исследователь'),
-    avatar: Joi.string().custom(patternLink),
+    avatar: Joi.string().uri().regex(patternLink),
     email: Joi.string().required().email(),
     password: Joi.string().required(),
   }),
