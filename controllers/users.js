@@ -16,14 +16,9 @@ module.exports.login = (req, res, next) => {
         httpOnly: true,
         sameSite: true,
       });
-      res.status(200).send({ message: 'Авторизация успешна', token });
+      res.send({ message: 'Авторизация успешна', token });
     })
-    .catch((err) => {
-      if (err.message === 'IncorrectEmail') {
-        next(new AuthError('Неверный email или пароль.'));
-      }
-      next(err);
-    });
+    .catch(next);
 };
 
 module.exports.getUsers = (req, res, next) => {
@@ -88,7 +83,7 @@ module.exports.createUser = (req, res, next) => {
       if (err.name === 'ValidationError') {
         next(new BadRequestError('Переданы некорректные данные.'));
       } else if (err.code === 11000) {
-        next(new ConflictError('Ошибка'));
+        next(new ConflictError('Пользователь с таким email уже зарегистрирован'));
       } else {
         next(err);
       }
@@ -102,16 +97,14 @@ module.exports.updateUser = (req, res, next) => {
       throw new BadRequestError('Переданы неверные данные');
     })
     .then((user) => {
-      if (!user) {
-        next(new BadRequestError('Переданы неверные данные'));
-      }
       res.status(200).send({ data: user });
     })
     .catch((err) => {
       if (err.name === 'ValidationError') {
         next(new BadRequestError('Переданы некорректные данные'));
+      } else {
+        next(err);
       }
-      next(err);
     });
 };
 

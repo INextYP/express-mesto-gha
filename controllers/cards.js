@@ -35,7 +35,8 @@ const deleteCard = (req, res, next) => {
       const cardOwner = String(card.owner);
       if (user === cardOwner) {
         Card.findByIdAndRemove(req.params.cardId)
-          .then((deletedCard) => res.send(deletedCard));
+          .then((deletedCard) => res.send(deletedCard))
+          .catch(next);
       } else {
         next(new NotRootError('Вы можете удалять только собственные карточки'));
       }

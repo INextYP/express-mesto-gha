@@ -9,8 +9,7 @@ const routerCards = require('./routes/cards');
 const { login, createUser } = require('./controllers/users');
 const auth = require('./middlewares/auth');
 const {
-  registrationValidation,
-  loginValidation,
+  registrationValidation, loginValidation,
 } = require('./middlewares/validation');
 const NotFoundError = require('./errors/NotFoundError');
 
